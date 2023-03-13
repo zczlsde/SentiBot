@@ -52,14 +52,15 @@ writer = iSummaryWriter(log_path='./logs', log_name='PPO-Sentiment-gpt')
 config = PPOConfig(
     model_name="AndyReas/NewsGPT",
     learning_rate=1.41e-5,
-    batch_size=16
+    batch_size=64,
+    forward_batch_size=16,
 )
 # prompt池
 prompts = [
-    'U.S. President Donald Trump ',
-    'Donald Trump will meet this weekend ',
+    'U.S. President Donald Trump',
+    'Donald Trump will meet this weekend',
     'It will be difficult for future U.S. administrations',
-    'The battle for the city ',
+    'The battle for the city',
     'Republican leaders of the Senate on Tuesday'
 ]
 # We then define the arguments to pass to the sentiment analysis pipeline.
@@ -121,13 +122,21 @@ for epoch in tqdm(range(50)):
     query_tensors = [torch.tensor(t).long().to(device) for t in batch["tokens"]]
     
     t = time.time()
+     
     response_tensors = []
     for query in query_tensors:
         gen_len = output_length_sampler()
         generation_kwargs["max_new_tokens"] = gen_len
         response = ppo_trainer.generate(query, **generation_kwargs)
-        response_tensors.append(response.squeeze())
-    batch["response"] = [tokenizer.decode(r[1:].squeeze()) for r in response_tensors]
+        response_tensors.append(response.squeeze()[-gen_len:])
+    batch["response"] = [tokenizer.decode(r.squeeze()) for r in response_tensors]
+    # response_tensors = []
+    # for query in query_tensors:
+    #     gen_len = output_length_sampler()
+    #     generation_kwargs["max_new_tokens"] = gen_len
+    #     response = ppo_trainer.generate(query, **generation_kwargs)
+    #     response_tensors.append(response.squeeze())
+    # batch["response"] = [tokenizer.decode(r[1:].squeeze()) for r in response_tensors]
     
     t = time.time()
     texts = [q + r for q, r in zip(batch["query"], batch["response"])]
