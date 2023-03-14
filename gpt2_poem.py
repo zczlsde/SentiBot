@@ -151,7 +151,7 @@ for epoch in tqdm(range(50)):
         elif output['label'] == 'negative':
             rewards.append(torch.tensor(-output['score']).to(device))
         else:
-            raise ValueError(f"WRong {output['label']}.")
+            raise ValueError(f"Wrong {output['label']}.")
     # rewards = torch.tensor(rewards).to(device)                                  # 将正向情感的得分作为生成得分
     # rewards = [torch.tensor(output[1]["score"]).to(device) for output in pipe_outputs]
     print(rewards)
