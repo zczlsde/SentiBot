@@ -90,7 +90,7 @@ ppo_trainer = PPOTrainer(config, model, ref_model, tokenizer)
 device = ppo_trainer.accelerator.device
 if ppo_trainer.accelerator.num_processes == 1:
     device = 0 if torch.cuda.is_available() else "cpu"  # to avoid a `pipeline` bug
-sentiment_pipe = pipeline("sentiment-analysis", model="cardiffnlp/twitter-roberta-base-sentiment-latest", device=device)
+sentiment_pipe = pipeline("sentiment-analysis", model="nickwong64/bert-base-uncased-poems-sentiment", device=device)
 
 # We then define the arguments to pass to the `generate` function. These arguments
 # are passed to the `generate` function of the PPOTrainer, which is a wrapper around
@@ -146,7 +146,7 @@ for epoch in tqdm(range(50)):
         # print(output)
         if output['label'] == 'positive':
             rewards.append(torch.tensor(output['score']).to(device))
-        elif output['label'] == 'neutral':
+        elif output['label'] == 'no_impact' or output['label'] == 'mixed':
             rewards.append(torch.tensor(0.0).to(device))
         elif output['label'] == 'negative':
             rewards.append(torch.tensor(-output['score']).to(device))
