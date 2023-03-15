@@ -53,7 +53,7 @@ config = PPOConfig(
     model_name="ismaelfaro/gpt2-poems.en",
     learning_rate=1.41e-5,
     batch_size=64,
-    forward_batch_size=16,
+    forward_batch_size=4, # could be increased
 )
 # prompt池
 prompts = [
@@ -103,7 +103,7 @@ generation_kwargs = {
     "pad_token_id": tokenizer.eos_token_id,
 }
 output_min_length = 4
-output_max_length = 30
+output_max_length = 20 # Increase the max length
 output_length_sampler = LengthSampler(output_min_length, output_max_length)
 
 
@@ -173,7 +173,8 @@ for epoch in tqdm(range(50)):
     print('Random Sample 5 text(s) of model output:')
     for i in range(5):                                                           # 随机打5个生成的结果
         print(f'{i+1}. {random.choice(texts)}')
-    
+    model.save_pretrained('gpt2-poem', push_to_hub=True)
+    tokenizer.save_pretrained('gpt2-poem', push_to_hub=True)
     writer.add_scalar('train/reward', logs['env/reward_mean'], epoch)
     for k, v in timing.items():
         writer.add_scalar(k, v, epoch)
