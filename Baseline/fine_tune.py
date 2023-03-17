@@ -146,7 +146,7 @@ class DataTrainingArguments:
     """
 
     dataset_name: Optional[str] = field(
-        default="Ozziey/poems_dataset", metadata={"help": "The name of the dataset to use (via the datasets library)."}
+        default=None, metadata={"help": "The name of the dataset to use (via the datasets library)."}
     )
     dataset_config_name: Optional[str] = field(
         default=None, metadata={"help": "The configuration name of the dataset to use (via the datasets library)."}
@@ -201,7 +201,9 @@ class DataTrainingArguments:
     keep_linebreaks: bool = field(
         default=True, metadata={"help": "Whether to keep line breaks when using TXT files or not."}
     )
-
+    joy: bool = field(
+        default=False, metadata={"help": "Whether to keep line breaks when using TXT files or not."}
+    )
     def __post_init__(self):
         if self.streaming:
             require_version("datasets>=2.0.0", "The streaming feature requires `datasets>=2.0.0`")
@@ -353,6 +355,13 @@ def main():
                 **dataset_args,
             )
 
+    # traing only joy data:
+    if data_args.joy:
+        logger.info("training on joy sets...")
+        if data_args.dataset_name is not None and data_args.dataset_name == "Ozziey/poems_dataset":
+            raw_datasets = raw_datasets.filter(lambda row: row['label'] == 'joy')
+        elif data_args.train_file is not None:
+            raw_datasets = raw_datasets.filter(lambda row: row['Emotion'] == 'surprise' or row['Emotion'] == 'joy' or row['Emotion'] == 'love' or row['Emotion'] == 'peace' or row['Emotion'] == 'courage')
     # See more about loading any type of standard or custom dataset (from files, python dict, pandas DataFrame, etc) at
     # https://huggingface.co/docs/datasets/loading_datasets.html.
 
@@ -415,7 +424,7 @@ def main():
         n_params = sum({p.data_ptr(): p.numel() for p in model.parameters()}.values())
         logger.info(f"Training new model from scratch - Total size={n_params/2**20:.2f}M params")
 
-    # We resize the embeddings only when necessary to avoid index errors. If you are creating a model from scratch
+    # We resize the embeddings only when necessary to avoid index errors. If you are creating a model frotok_loggerm scratch
     # on a small vocab and want a smaller embedding size, remove this test.
     embedding_size = model.get_input_embeddings().weight.shape[0]
     if len(tokenizer) > embedding_size:
@@ -427,7 +436,7 @@ def main():
         column_names = list(raw_datasets["train"].features)
     else:
         column_names = list(raw_datasets["validation"].features)
-    text_column_name = "text" if "text" in column_names else column_names[0]
+    text_column_name = "poem content" if "poem content" in column_names else column_names[0]
 
     # since this will be pickled to avoid _LazyModule error in Hasher force logger loading before tokenize_function
     tok_logger = transformers.utils.logging.get_logger("transformers.tokenization_utils_base")
