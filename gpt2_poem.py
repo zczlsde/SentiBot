@@ -14,7 +14,7 @@
 # limitations under the License.
 import torch
 from tqdm import tqdm
-from transformers import AutoTokenizer, pipeline
+from transformers import AutoTokenizer, pipeline, AutoModelForSequenceClassification
 
 from trl import AutoModelForCausalLMWithValueHead, PPOConfig, PPOTrainer, set_seed
 from trl.core import LengthSampler
@@ -85,7 +85,7 @@ tokenizer.pad_token = tokenizer.eos_token
 
 # We then build the PPOTrainer, passing the model, the reference model, the tokenizer
 ppo_trainer = PPOTrainer(config, model, ref_model, tokenizer)
-
+ppo_trainer_ref = PPOTrainer(config, model, ref_model, tokenizer)
 # We then build the sentiment analysis pipeline, passing the model name and the
 # sentiment analysis pipeline arguments. Let's also make sure to set the device
 # to the same device as the PPOTrainer.
@@ -94,6 +94,9 @@ if ppo_trainer.accelerator.num_processes == 1:
     device = 0 if torch.cuda.is_available() else "cpu"  # to avoid a `pipeline` bug
 sentiment_pipe = pipeline("sentiment-analysis", model="nickwong64/bert-base-uncased-poems-sentiment", device=device)
 
+bleu_tokenizer = AutoTokenizer.from_pretrained("Elron/bleurt-tiny-512")
+bleu_model = AutoModelForSequenceClassification.from_pretrained("Elron/bleurt-tiny-512")
+bleu_model.eval()
 # We then define the arguments to pass to the `generate` function. These arguments
 # are passed to the `generate` function of the PPOTrainer, which is a wrapper around
 # the `generate` function of the trained model.
@@ -126,12 +129,17 @@ for epoch in tqdm(range(500)):
     t = time.time()
      
     response_tensors = []
+    ref_response_tensors = []
     for query in query_tensors:
         gen_len = output_length_sampler()
         generation_kwargs["max_new_tokens"] = gen_len
         response = ppo_trainer.generate(query, **generation_kwargs)
+        ref_response = ppo_trainer_ref.generate(query, **generation_kwargs)
         response_tensors.append(response.squeeze()[-gen_len:])
+        ref_response_tensors.append(ref_response.squeeze()[-gen_len:])
     batch["response"] = [tokenizer.decode(r.squeeze()) for r in response_tensors]
+    batch["ref_response"] = [tokenizer.decode(r.squeeze()) for r in ref_response_tensors]
+    
     # response_tensors = []
     # for query in query_tensors:
     #     gen_len = output_length_sampler()
@@ -144,7 +152,7 @@ for epoch in tqdm(range(500)):
     texts = [q + r for q, r in zip(batch["query"], batch["response"])]
     pipe_outputs = sentiment_pipe(texts)
     rewards = []
-    for output in pipe_outputs:
+    for output in enumerate(pipe_outputs):
         # print(output)
         if output['label'] == 'positive':
             rewards.append(torch.tensor(output['score']).to(device))
@@ -157,6 +165,13 @@ for epoch in tqdm(range(500)):
     # rewards = torch.tensor(rewards).to(device)                                  # 将正向情感的得分作为生成得分
     # rewards = [torch.tensor(output[1]["score"]).to(device) for output in pipe_outputs]
     # print(rewards)
+    references = batch["response"]
+    candidates = batch["ref_response"]
+    
+    with torch.no_grad():
+      bleu_scores = bleu_model(**tokenizer(references, candidates, return_tensors='pt'))[0].squeeze()..to(device)
+    rewards += bleu_scores
+
     timing['time/get_sentiment_preds'] = time.time() - t
     # Run PPO step
     stats = ppo_trainer.step(query_tensors, response_tensors, rewards)
