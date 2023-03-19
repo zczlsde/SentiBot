@@ -152,7 +152,7 @@ for epoch in tqdm(range(500)):
     texts = [q + r for q, r in zip(batch["query"], batch["response"])]
     pipe_outputs = sentiment_pipe(texts)
     rewards = []
-    for output in enumerate(pipe_outputs):
+    for output in pipe_outputs:
         # print(output)
         if output['label'] == 'positive':
             rewards.append(torch.tensor(output['score']).to(device))
@@ -169,7 +169,7 @@ for epoch in tqdm(range(500)):
     candidates = batch["ref_response"]
     
     with torch.no_grad():
-      bleu_scores = bleu_model(**tokenizer(references, candidates, return_tensors='pt'))[0].squeeze()..to(device)
+      bleu_scores = bleu_model(**bleu_tokenizer(references, candidates, return_tensors='pt'))[0].squeeze().to(device)
     rewards += bleu_scores
 
     timing['time/get_sentiment_preds'] = time.time() - t
