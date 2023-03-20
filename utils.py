@@ -1,4 +1,5 @@
 from datasets import load_dataset
+from transformers import pipeline
 
 
 def load_perc_prompts(num):
@@ -26,3 +27,9 @@ def load_prompts(num):
     )['prompt']
 
     return prompts
+
+def evaluation(sentence):
+    nlp = pipeline(task='text-classification', 
+            model='nickwong64/bert-base-uncased-poems-sentiment')
+    result = nlp(sentence)[0]
+    return result['label'], result['score']
