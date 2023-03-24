@@ -11,7 +11,7 @@ def fluency(verbose = 0):
             error rate: single float
             error rates: array of float
     """
-    with open("./Data/Generations/perc_generations_500.txt", encoding="utf8") as f:
+    with open("./Data/Generations/perc_generations.txt", encoding="utf8") as f:
         lines = f.readlines()
 
     phrases = []

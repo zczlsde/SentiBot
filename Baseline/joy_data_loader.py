@@ -52,7 +52,7 @@ def load_evaluation_prompts(length=5, seed=19019509):
     for emotion in Emotions:
         mask = dataset["Emotion"] == emotion
         prompt = rng.choice(dataset[mask])[0]
-        Prompts[emotion] = prompt.split()[:length]
+        Prompts[emotion] = ' '.join(prompt.split()[:length])
     return Prompts
 
 if __name__ == "__main__":
