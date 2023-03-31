@@ -61,7 +61,7 @@ def fluency(path = "./Data/Generations/perc_generations.txt", verbose = 0):
     return error_rate, error_rates
 
 
-def diversity(path = "./Data/Generations/perc_generations.txt", seed=19019509, size = 50):
+def diversity(path = "./Data/Generations/perc_generations.txt", seed=None, size = 50):
     """
     Diversity between {size} phrases
     path: the path of the generated txt file containing the phrases
@@ -72,7 +72,9 @@ def diversity(path = "./Data/Generations/perc_generations.txt", seed=19019509, s
 
     # Tokenize input texts
     texts = _read_text(path=path)
-    rng = np.random.default_rng(seed=seed)
+    rng = np.random.default_rng()
+    if seed != None:
+        rng = np.random.default_rng(seed=seed)
     index = rng.choice(len(texts))
     texts = texts[index:index+size]
 
@@ -93,20 +95,26 @@ def diversity(path = "./Data/Generations/perc_generations.txt", seed=19019509, s
             cos_sim_mat.append(cos_sim)
     return cos_sim_mat
 
-def novelty(training_phrase, path = "./Data/Generations/perc_generations.txt", seed=19019509, size = 50):
+def novelty(training_phrase, path = "./Data/Generations/perc_generations.txt", seed=None, size = 50, start=None):
     """
     Novelty between {size} phrases and the trainning phrase
     training_phrase: the phrase used in the training dataset with the same prompt as the generated phrases
     path: the path of the generated txt file containing the phrases
     seed: for reproducibility
+    start: select in order, seed is not used if start != None
     """
     tokenizer = AutoTokenizer.from_pretrained("princeton-nlp/sup-simcse-roberta-large")
     model = AutoModel.from_pretrained("princeton-nlp/sup-simcse-roberta-large")
 
     # Tokenize input texts
     texts = _read_text(path=path)
-    rng = np.random.default_rng(seed=seed)
-    index = rng.choice(len(texts))
+    if start == None:
+        rng = np.random.default_rng()
+        if seed != None:
+            rng = np.random.default_rng(seed=seed)
+        index = rng.choice(len(texts))
+    else:
+        index = start if start+size < len(texts) else 0
     texts = texts[index:index+size]
     texts.append(training_phrase)
 
@@ -119,12 +127,13 @@ def novelty(training_phrase, path = "./Data/Generations/perc_generations.txt", s
     # Calculate cosine similarities
     # results are in [0, 1]. Higher means more diversity
     cos_sim_mat = []
-    for i in range(embeddings.shape[0]):
+    for i in range(embeddings.shape[0]-1):
             cos_sim = cosine(embeddings[i], embeddings[-1])/2
             cos_sim_mat.append(cos_sim)
     return cos_sim_mat
 
-
+def accuracy(path = "./Data/Generations/perc_generations.txt", seed=19019509, size = 50):
+    return
 
 if __name__ == "__main__":
     # rate, rates = fluency(verbose=1)
