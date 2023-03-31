@@ -61,18 +61,20 @@ def fluency(path = "./Data/Generations/perc_generations.txt", verbose = 0):
     return error_rate, error_rates
 
 
-def diversity(path = "./Data/Generations/perc_generations.txt", seed=19019509):
+def diversity(path = "./Data/Generations/perc_generations.txt", seed=19019509, size = 50):
     """
-    Diversity in 20 phrases
+    Diversity between {size} phrases
+    path: the path of the generated txt file containing the phrases
+    seed: for reproducibility
     """
-    tokenizer = AutoTokenizer.from_pretrained("princeton-nlp/sup-simcse-bert-base-uncased")
-    model = AutoModel.from_pretrained("princeton-nlp/sup-simcse-bert-base-uncased")
+    tokenizer = AutoTokenizer.from_pretrained("princeton-nlp/sup-simcse-roberta-large")
+    model = AutoModel.from_pretrained("princeton-nlp/sup-simcse-roberta-large")
 
     # Tokenize input texts
     texts = _read_text(path=path)
     rng = np.random.default_rng(seed=seed)
     index = rng.choice(len(texts))
-    texts = texts[index:index+20]
+    texts = texts[index:index+size]
 
     inputs = tokenizer(texts, padding=True, truncation=True, return_tensors="pt")
 
@@ -80,18 +82,51 @@ def diversity(path = "./Data/Generations/perc_generations.txt", seed=19019509):
     with torch.no_grad():
         embeddings = model(**inputs, output_hidden_states=True, return_dict=True).pooler_output
 
-
-    print(embeddings.shape)
     # Calculate cosine similarities
-    # Cosine similarities are in [-1, 1]. Higher means more similar
-    cosine_sim_0_1 = 1 - cosine(embeddings[0], embeddings[1])
-    cosine_sim_0_2 = 1 - cosine(embeddings[0], embeddings[2])
+    # results are in [0, 1]. Higher means more diversity
+    cos_sim_mat = []
+    for i in range(embeddings.shape[0]):
+        for j in range(embeddings.shape[0]):
+            if i >= j:
+                continue
+            cos_sim = cosine(embeddings[i], embeddings[j])/2
+            cos_sim_mat.append(cos_sim)
+    return cos_sim_mat
+
+def novelty(training_phrase, path = "./Data/Generations/perc_generations.txt", seed=19019509, size = 50):
+    """
+    Novelty between {size} phrases and the trainning phrase
+    training_phrase: the phrase used in the training dataset with the same prompt as the generated phrases
+    path: the path of the generated txt file containing the phrases
+    seed: for reproducibility
+    """
+    tokenizer = AutoTokenizer.from_pretrained("princeton-nlp/sup-simcse-roberta-large")
+    model = AutoModel.from_pretrained("princeton-nlp/sup-simcse-roberta-large")
+
+    # Tokenize input texts
+    texts = _read_text(path=path)
+    rng = np.random.default_rng(seed=seed)
+    index = rng.choice(len(texts))
+    texts = texts[index:index+size]
+    texts.append(training_phrase)
+
+    inputs = tokenizer(texts, padding=True, truncation=True, return_tensors="pt")
+
+    # Get the embeddings
+    with torch.no_grad():
+        embeddings = model(**inputs, output_hidden_states=True, return_dict=True).pooler_output
+
+    # Calculate cosine similarities
+    # results are in [0, 1]. Higher means more diversity
+    cos_sim_mat = []
+    for i in range(embeddings.shape[0]):
+            cos_sim = cosine(embeddings[i], embeddings[-1])/2
+            cos_sim_mat.append(cos_sim)
+    return cos_sim_mat
 
 
-    print("Cosine similarity between \"%s\" and \"%s\" is: %.3f" % (texts[0], texts[1], cosine_sim_0_1))
-    print("Cosine similarity between \"%s\" and \"%s\" is: %.3f" % (texts[0], texts[2], cosine_sim_0_2))
 
 if __name__ == "__main__":
     # rate, rates = fluency(verbose=1)
     # print(rate, rates)
-    diversity()
+    div = diversity()
