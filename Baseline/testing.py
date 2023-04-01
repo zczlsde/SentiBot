@@ -3,7 +3,7 @@ import language_tool_python
 import numpy as np
 import torch
 from scipy.spatial.distance import cosine
-from transformers import AutoModel, AutoTokenizer
+from transformers import AutoModel, AutoTokenizer, pipeline
 
 def _read_text(path):
     """
@@ -68,7 +68,6 @@ def fluency(path = "./Data/Generations/perc_generations.txt", verbose = 0, size=
     tool.close()
     error_rate = 1-total_errors/total_length
     return error_rate, error_rates
-
 
 def diversity(path = "./Data/Generations/perc_generations.txt", seed=None, size = 50):
     """
@@ -142,12 +141,26 @@ def novelty(training_phrase, path = "./Data/Generations/perc_generations.txt", s
             cos_sim_mat.append(cos_sim)
     return cos_sim_mat
 
-def accuracy(path = "./Data/Generations/perc_generations.txt", seed=19019509, size = 50):
-    return
+def accuracy(path = "./Data/Generations/perc_generations.txt", size = None, metric=1):
+    """
+    Calculate the sentiment accuracy score for a generation file
+    """
+    phrases = _read_text(path)
+    rng = np.random.default_rng()
+    if size != None:
+        indices = rng.choice(len(phrases), size)
+        phrases = [phrases[index] for index in indices]
+    print(len(phrases), " phrases")
+    model = 'cardiffnlp/twitter-roberta-base-sentiment' if metric == 1 else 'nickwong64/bert-base-uncased-poems-sentiment'
+    nlp = pipeline(task='text-classification', model=model)
+    results = nlp(phrases)
+    labels = [result['label'] for result in results]
+    scores = [result['score'] for result in results]
+    accuracy = [score if label == 'positive' or label == 'LABEL_2' else -score if label == 'negative' or label == 'LABEL_0' else 0 for label, score in zip(labels, scores)]
+    return accuracy
 
 if __name__ == "__main__":
-    rate, rates = fluency(path="./Data/Generations/test.txt", size = 100)
-    print(rate)
-    div = diversity(path="./Data/Generations/test.txt", size=100)
-    div2 = diversity(path="./Data/Generations/perc_generations.txt", size=100)
-    print(np.mean(div), np.mean(div2))
+    # rate, rates = fluency(path="./Data/Generations/test.txt", size = 100)
+    # div = diversity(path="./Data/Generations/test.txt", size=100)
+    sentiment = accuracy()
+    print(sentiment)
