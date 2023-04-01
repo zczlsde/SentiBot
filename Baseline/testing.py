@@ -173,11 +173,12 @@ def accuracy_smooth(path = "./Data/Generations/perc_generations.txt", size = Non
     nlp = pipeline(task='text-classification', model=model, top_k=None)
     results = nlp(phrases)
     scores = [labels['score'] for result in results for labels in result if labels['label'] == 'LABEL_2']
-    return scores
+    neg_scores = [labels['score'] for result in results for labels in result if labels['label'] == 'LABEL_0']
+    return scores, neg_scores
 
 
 if __name__ == "__main__":
     # rate, rates = fluency(path="./Data/Generations/test.txt", size = 100)
     # div = diversity(path="./Data/Generations/test.txt", size=100)
-    sentiment = accuracy_smooth()
+    sentiment, neg = accuracy_smooth()
     print(sentiment)
