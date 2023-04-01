@@ -21,6 +21,7 @@ from trl.core import LengthSampler
 from evaluate import load
 import random 
 import time
+from datetime import datetime
 from iTrainingLogger import iSummaryWriter
 from utils import load_prompts
 
@@ -48,7 +49,11 @@ tqdm.pandas()
 # If you want to log with tensorboard, add the kwarg
 # `accelerator_kwargs={"logging_dir": PATH_TO_LOGS}` to the PPOConfig.
 
-writer = iSummaryWriter(log_path='./logs', log_name='PPO-Sentiment-gpt')
+EXPERIMENT_NAME = 'GPT2-POEM-BS'
+EXPERIMENT_TIME = datetime.now().strftime("%d-%m-%Y_%H-%M")
+LOG_PATH = f'./logs/{EXPERIMENT_NAME}_{EXPERIMENT_TIME}'
+
+writer = iSummaryWriter(log_path=LOG_PATH, log_name='PPO-Sentiment-gpt')
 config = PPOConfig(
     model_name="ismaelfaro/gpt2-poems.en",
     learning_rate=1.41e-5,
@@ -172,7 +177,7 @@ for epoch in tqdm(range(500)):
             raise ValueError(f"Wrong {output['label']}.")
     # rewards = torch.tensor(rewards).to(device)                                  # 将正向情感的得分作为生成得分
     # rewards = [torch.tensor(output[1]["score"]).to(device) for output in pipe_outputs]
-    print(rewards)
+    # print(rewards)
 
     timing['time/get_sentiment_preds'] = time.time() - t
     # Run PPO step
@@ -192,8 +197,11 @@ for epoch in tqdm(range(500)):
     # print('Random Sample 5 text(s) of model output:')
     # for i in range(5):                                                           # 随机打5个生成的结果
         # print(f'{i+1}. {random.choice(texts)}')
-    model.save_pretrained('gpt2-poem', push_to_hub=False)
-    tokenizer.save_pretrained('gpt2-poem', push_to_hub=False)
+    if epoch != 0 and epoch % 100 == 0:
+        save_path = f'{LOG_PATH}/EPOCH{epoch}'
+        model.save_pretrained(save_path, push_to_hub=False)
+        tokenizer.save_pretrained(save_path, push_to_hub=False)
+
     writer.add_scalar('train/reward', logs['env/reward_mean'], epoch)
     for k, v in timing.items():
         writer.add_scalar(k, v, epoch)

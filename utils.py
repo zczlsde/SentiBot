@@ -2,8 +2,9 @@ from datasets import load_dataset
 from transformers import pipeline
 
 
-def load_perc_prompts(num):
-    dataset = load_dataset('csv', data_files={'train': './Baseline/Data/PERC.csv'})
+def load_perc_prompts(num, dataset=None):
+    if dataset is None:
+        dataset = load_dataset('csv', data_files={'train': './Baseline/Data/PERC.csv'})
     joy_dataset = dataset.filter(lambda row: row['Emotion'] == 'surprise' 
                                  or row['Emotion'] == 'joy' 
                                  or row['Emotion'] == 'love' 
@@ -15,11 +16,12 @@ def load_perc_prompts(num):
     )['prompt']
     return prompts
 
-def load_prompts(num):
-    dataset = load_dataset(
-        "Ozziey/poems_dataset", 
-        data_files="final_df_emotions(remove-bias).csv"
-    )['train']
+def load_prompts(num, dataset=None):
+    if dataset is None:
+        dataset = load_dataset(
+            "Ozziey/poems_dataset", 
+            data_files="final_df_emotions(remove-bias).csv"
+        )['train']
     joy_dataset = dataset.filter(lambda row: row['label'] == 'joy')
     
     prompts = joy_dataset.map(lambda poem: 
