@@ -159,8 +159,25 @@ def accuracy(path = "./Data/Generations/perc_generations.txt", size = None, metr
     accuracy = [score if label == 'positive' or label == 'LABEL_2' else -score if label == 'negative' or label == 'LABEL_0' else 0 for label, score in zip(labels, scores)]
     return accuracy
 
+def accuracy_smooth(path = "./Data/Generations/perc_generations.txt", size = None, metric=1):
+    """
+    Calculate the sentiment accuracy score for a generation file
+    """
+    phrases = _read_text(path)
+    rng = np.random.default_rng()
+    if size != None:
+        indices = rng.choice(len(phrases), size)
+        phrases = [phrases[index] for index in indices]
+    print(len(phrases), " phrases")
+    model = 'cardiffnlp/twitter-roberta-base-sentiment' if metric == 1 else 'nickwong64/bert-base-uncased-poems-sentiment'
+    nlp = pipeline(task='text-classification', model=model, top_k=None)
+    results = nlp(phrases)
+    scores = [labels['score'] for result in results for labels in result if labels['label'] == 'LABEL_2']
+    return scores
+
+
 if __name__ == "__main__":
     # rate, rates = fluency(path="./Data/Generations/test.txt", size = 100)
     # div = diversity(path="./Data/Generations/test.txt", size=100)
-    sentiment = accuracy()
+    sentiment = accuracy_smooth()
     print(sentiment)
