@@ -54,7 +54,12 @@ def fluency(path = "./Data/Generations/perc_generations.txt", verbose = 0, size=
             length = len(phrase.split())
             total_length += length
             matches = tool.check(phrase)
-            naive_errors = len(matches)
+            counter = 0
+            for i in matches:
+                if i.ruleId == "WHITESPACE_RULE" or i.ruleId == "PRP_COMMA" or i.ruleId == "COMMA_COMPOUND_SENTENCE":
+                    continue
+                counter += 1
+            naive_errors = counter
             total_errors += naive_errors
             if length > 0:
                 error_rates.append(1-naive_errors/length)
