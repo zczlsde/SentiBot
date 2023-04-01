@@ -10,7 +10,7 @@ def _read_text(path):
     read in the generated text and remove excess
     """
     with open(path, encoding="utf8") as f:
-        lines = f.readlines()
+        lines = [line.strip() for line in f]
 
     phrases = []
     phrase = ""
@@ -22,7 +22,7 @@ def _read_text(path):
         phrase = phrase + x
     return phrases
 
-def fluency(path = "./Data/Generations/perc_generations.txt", verbose = 0):
+def fluency(path = "./Data/Generations/perc_generations.txt", verbose = 0, size=None):
     """
     Give a score on the average fluency and fluency distribution
 
@@ -31,6 +31,10 @@ def fluency(path = "./Data/Generations/perc_generations.txt", verbose = 0):
             error rates: array of float for each phrase
     """
     phrases = _read_text(path)
+    rng = np.random.default_rng()
+    if size != None:
+        indices = rng.choice(len(phrases), size)
+        phrases = [phrases[index] for index in indices]
     print(len(phrases), " phrases")
 
     # mask = [not x.startswith("===") for x in lines]
@@ -75,8 +79,9 @@ def diversity(path = "./Data/Generations/perc_generations.txt", seed=None, size 
     rng = np.random.default_rng()
     if seed != None:
         rng = np.random.default_rng(seed=seed)
-    index = rng.choice(len(texts))
-    texts = texts[index:index+size]
+    indices = rng.choice(len(texts), size=size, replace=False)
+    print("selecting indices: ", indices)
+    texts = [texts[index] for index in indices]
 
     inputs = tokenizer(texts, padding=True, truncation=True, return_tensors="pt")
 
@@ -136,6 +141,8 @@ def accuracy(path = "./Data/Generations/perc_generations.txt", seed=19019509, si
     return
 
 if __name__ == "__main__":
-    # rate, rates = fluency(verbose=1)
-    # print(rate, rates)
-    div = diversity()
+    rate, rates = fluency(path="./Data/Generations/test.txt", size = 100)
+    print(rate)
+    div = diversity(path="./Data/Generations/test.txt", size=100)
+    div2 = diversity(path="./Data/Generations/perc_generations.txt", size=100)
+    print(np.mean(div), np.mean(div2))
