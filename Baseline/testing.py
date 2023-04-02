@@ -88,7 +88,6 @@ def diversity(path = "./Data/Generations/perc_generations.txt", seed=None, size 
     indices = rng.choice(len(texts), size=size, replace=False)
     print("selecting indices: ", indices)
     texts = [texts[index] for index in indices]
-    texts = [' '.join(text.split()[5:]) for text in texts]
 
     inputs = tokenizer(texts, padding=True, truncation=True, return_tensors="pt")
     inputs.to(device)
