@@ -141,6 +141,45 @@ def novelty(training_phrase, path = "./Data/Generations/perc_generations.txt", s
             cos_sim_mat.append(cos_sim)
     return cos_sim_mat
 
+def novelty_new(training_phrase, path = "./Data/Generations/perc_generations.txt", seed=None, size = 50, start=None, prompt_size=5):
+    """
+    Novelty between {size} phrases and the trainning phrase
+    training_phrase: the phrase used in the training dataset with the same prompt as the generated phrases
+    path: the path of the generated txt file containing the phrases
+    seed: for reproducibility
+    start: select in order, seed is not used if start != None
+    """
+    tokenizer = AutoTokenizer.from_pretrained("princeton-nlp/sup-simcse-roberta-large")
+    model = AutoModel.from_pretrained("princeton-nlp/sup-simcse-roberta-large")
+
+    # Tokenize input texts
+    texts = _read_text(path=path)
+    if start == None:
+        rng = np.random.default_rng()
+        if seed != None:
+            rng = np.random.default_rng(seed=seed)
+        index = rng.choice(len(texts))
+    else:
+        index = start if start+size < len(texts) else 0
+    texts = texts[index:index+size]
+    texts.append(training_phrase)
+    texts = [' '.join(text.split()[5:]) for text in texts]
+
+    inputs = tokenizer(texts, padding=True, truncation=True, return_tensors="pt")
+
+    # Get the embeddings
+    with torch.no_grad():
+        embeddings = model(**inputs, output_hidden_states=True, return_dict=True).pooler_output
+
+    # Calculate cosine similarities
+    # results are in [0, 1]. Higher means more diversity
+    cos_sim_mat = []
+    for i in range(embeddings.shape[0]-1):
+            cos_sim = cosine(embeddings[i], embeddings[-1])/2
+            cos_sim_mat.append(cos_sim)
+    return cos_sim_mat
+
+
 def accuracy(path = "./Data/Generations/perc_generations.txt", size = None, metric=1):
     """
     Calculate the sentiment accuracy score for a generation file
@@ -180,5 +219,10 @@ def accuracy_smooth(path = "./Data/Generations/perc_generations.txt", size = Non
 if __name__ == "__main__":
     # rate, rates = fluency(path="./Data/Generations/test.txt", size = 100)
     # div = diversity(path="./Data/Generations/test.txt", size=100)
-    sentiment, neg = accuracy_smooth()
-    print(sentiment)
+    # sentiment, neg = accuracy_smooth()
+    # print(sentiment)
+    text = "To My Fairy Fancies NAY, no longer I may hold you, \
+        In my spirit's soft caresses, Nor like lotus-leaves enfold you In the tangles of my tresses. \
+            Fairy fancies, fly away To the white cloud-wildernesses, Fly away! Nay, no longer ye may linger With your laughter-lighted faces, \
+                Now I am a thought-worn singer In life's high and lonely places. Fairy fancies, fly away, To bright wind-inwoven spaces, Fly"
+    novelty_new(training_phrase=text)
