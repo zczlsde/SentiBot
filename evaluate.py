@@ -28,6 +28,14 @@ def evaluate(generated_path, save_path):
     plt.xlabel("Novelty Score")
     plt.savefig(save_path + '/novelty_diagram.png')
     plt.close()
+    
+    accuracy_data, _ = t.accuracy_smooth(path=generated_path)
+    plt.figure()
+    plt.hist(accuracy_data, bins=50)
+    plt.title("Accuracy Distribution")
+    plt.xlabel("Accuracy Score")
+    plt.savefig(save_path + '/accuracy_diagram.png')
+    plt.close()
 
 def main():
     all_model_path = r'./logs'
