@@ -75,8 +75,10 @@ def diversity(path = "./Data/Generations/perc_generations.txt", seed=None, size 
     path: the path of the generated txt file containing the phrases
     seed: for reproducibility
     """
+    device = torch.device("cuda")
     tokenizer = AutoTokenizer.from_pretrained("princeton-nlp/sup-simcse-roberta-large")
     model = AutoModel.from_pretrained("princeton-nlp/sup-simcse-roberta-large")
+    model.to(device)
 
     # Tokenize input texts
     texts = _read_text(path=path)
@@ -86,12 +88,13 @@ def diversity(path = "./Data/Generations/perc_generations.txt", seed=None, size 
     indices = rng.choice(len(texts), size=size, replace=False)
     print("selecting indices: ", indices)
     texts = [texts[index] for index in indices]
+    texts = [' '.join(text.split()[5:]) for text in texts]
 
     inputs = tokenizer(texts, padding=True, truncation=True, return_tensors="pt")
-
+    inputs.to(device)
     # Get the embeddings
     with torch.no_grad():
-        embeddings = model(**inputs, output_hidden_states=True, return_dict=True).pooler_output
+        embeddings = model(**inputs, output_hidden_states=True, return_dict=True).pooler_output.cpu()
 
     # Calculate cosine similarities
     # results are in [0, 1]. Higher means more diversity
@@ -112,9 +115,10 @@ def novelty(training_phrase, path = "./Data/Generations/perc_generations.txt", s
     seed: for reproducibility
     start: select in order, seed is not used if start != None
     """
+    device = torch.device("cuda")
     tokenizer = AutoTokenizer.from_pretrained("princeton-nlp/sup-simcse-roberta-large")
     model = AutoModel.from_pretrained("princeton-nlp/sup-simcse-roberta-large")
-
+    model.to(device)
     # Tokenize input texts
     texts = _read_text(path=path)
     if start == None:
@@ -128,10 +132,10 @@ def novelty(training_phrase, path = "./Data/Generations/perc_generations.txt", s
     texts.append(training_phrase)
 
     inputs = tokenizer(texts, padding=True, truncation=True, return_tensors="pt")
-
+    inputs.to(device)
     # Get the embeddings
     with torch.no_grad():
-        embeddings = model(**inputs, output_hidden_states=True, return_dict=True).pooler_output
+        embeddings = model(**inputs, output_hidden_states=True, return_dict=True).pooler_output.cpu()
 
     # Calculate cosine similarities
     # results are in [0, 1]. Higher means more diversity
@@ -149,9 +153,10 @@ def novelty_new(training_phrase, path = "./Data/Generations/perc_generations.txt
     seed: for reproducibility
     start: select in order, seed is not used if start != None
     """
+    device = torch.device("cuda")
     tokenizer = AutoTokenizer.from_pretrained("princeton-nlp/sup-simcse-roberta-large")
     model = AutoModel.from_pretrained("princeton-nlp/sup-simcse-roberta-large")
-
+    model.to(device)
     # Tokenize input texts
     texts = _read_text(path=path)
     if start == None:
@@ -166,10 +171,10 @@ def novelty_new(training_phrase, path = "./Data/Generations/perc_generations.txt
     texts = [' '.join(text.split()[5:]) for text in texts]
 
     inputs = tokenizer(texts, padding=True, truncation=True, return_tensors="pt")
-
+    inputs.to(device)
     # Get the embeddings
     with torch.no_grad():
-        embeddings = model(**inputs, output_hidden_states=True, return_dict=True).pooler_output
+        embeddings = model(**inputs, output_hidden_states=True, return_dict=True).pooler_output.cpu()
 
     # Calculate cosine similarities
     # results are in [0, 1]. Higher means more diversity
@@ -202,6 +207,7 @@ def accuracy_smooth(path = "./Data/Generations/perc_generations.txt", size = Non
     """
     Calculate the sentiment accuracy score for a generation file
     """
+    device = torch.device("cuda")
     phrases = _read_text(path)
     rng = np.random.default_rng()
     if size != None:
