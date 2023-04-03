@@ -76,9 +76,20 @@ def diversity(path = "./Data/Generations/perc_generations.txt", seed=None, size 
     path: the path of the generated txt file containing the phrases
     seed: for reproducibility
     """
+    
     torch.cuda.empty_cache()
     torch.cuda.ipc_collect()
     device = torch.device("cuda")
+    """
+    princeton-nlp/unsup-simcse-bert-base-uncased	76.25
+    princeton-nlp/unsup-simcse-bert-large-uncased	78.41
+    princeton-nlp/unsup-simcse-roberta-base	76.57
+    princeton-nlp/unsup-simcse-roberta-large	78.90
+    princeton-nlp/sup-simcse-bert-base-uncased	81.57
+    princeton-nlp/sup-simcse-bert-large-uncased	82.21
+    princeton-nlp/sup-simcse-roberta-base	82.52
+    princeton-nlp/sup-simcse-roberta-large	83.76
+    """
     tokenizer = AutoTokenizer.from_pretrained("princeton-nlp/sup-simcse-roberta-large")
     model = AutoModel.from_pretrained("princeton-nlp/sup-simcse-roberta-large")
     model.to(device)
