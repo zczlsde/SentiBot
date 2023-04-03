@@ -4,6 +4,7 @@ import numpy as np
 import torch
 from scipy.spatial.distance import cosine
 from transformers import AutoModel, AutoTokenizer, pipeline
+from scipy import stats
 
 def _read_text(path):
     """
@@ -245,14 +246,39 @@ def accuracy_smooth(path = "./Data/Generations/perc_generations.txt", size = Non
     neg_scores = [labels['score'] for result in results for labels in result if labels['label'] == 'LABEL_0']
     return scores, neg_scores
 
+def t_test(group1, group2):
+    results = stats.ttest_ind(group1, group2)
+    print(results.statistic, results.pvalue)
 
 if __name__ == "__main__":
     # rate, rates = fluency(path="./Data/Generations/test.txt", size = 100)
     # div = diversity(path="./Data/Generations/test.txt", size=100)
     # sentiment, neg = accuracy_smooth()
     # print(sentiment)
-    text = "To My Fairy Fancies NAY, no longer I may hold you, \
-        In my spirit's soft caresses, Nor like lotus-leaves enfold you In the tangles of my tresses. \
-            Fairy fancies, fly away To the white cloud-wildernesses, Fly away! Nay, no longer ye may linger With your laughter-lighted faces, \
-                Now I am a thought-worn singer In life's high and lonely places. Fairy fancies, fly away, To bright wind-inwoven spaces, Fly"
-    novelty_new(training_phrase=text)
+    # text = "To My Fairy Fancies NAY, no longer I may hold you, \
+    #     In my spirit's soft caresses, Nor like lotus-leaves enfold you In the tangles of my tresses. \
+    #         Fairy fancies, fly away To the white cloud-wildernesses, Fly away! Nay, no longer ye may linger With your laughter-lighted faces, \
+    #             Now I am a thought-worn singer In life's high and lonely places. Fairy fancies, fly away, To bright wind-inwoven spaces, Fly"
+    # novelty_new(training_phrase=text)
+    base_novelty = np.loadtxt('./pre_computed/baseline_novelty_scores.txt', delimiter=',') 
+    rl_novelty = np.loadtxt('./pre_computed/rl_novelty_scores.txt', delimiter=',') 
+    base_novelty = base_novelty.flatten()
+    rl_novelty = rl_novelty.flatten()
+    print(base_novelty.shape, rl_novelty.shape)
+    print("novelty: ")
+    t_test(rl_novelty, base_novelty)
+
+    base_diversity = np.loadtxt('./pre_computed/baseline_diversity_scores.txt', delimiter=',') 
+    rl_diversity = np.loadtxt('./pre_computed/rl_diversity_scores.txt', delimiter=',') 
+    print("Diversity: ")
+    t_test(rl_diversity, base_diversity)
+
+    base_accuracy = np.loadtxt('./pre_computed/baseline_sentiment_scores.txt', delimiter=',') 
+    rl_accuracy = np.loadtxt('./pre_computed/rl_sentiment_scores.txt', delimiter=',') 
+    print("Accuracy: ")
+    t_test(rl_accuracy, base_accuracy)
+
+    base_fluency = np.loadtxt('./pre_computed/baseline_fluency_scores_new.txt', delimiter=',') 
+    rl_fluency = np.loadtxt('./pre_computed/rl_fluency_scores.txt', delimiter=',') 
+    print("Fluency: ")
+    t_test(rl_fluency, base_fluency)
