@@ -75,6 +75,8 @@ def diversity(path = "./Data/Generations/perc_generations.txt", seed=None, size 
     path: the path of the generated txt file containing the phrases
     seed: for reproducibility
     """
+    torch.cuda.empty_cache()
+    torch.cuda.ipc_collect()
     device = torch.device("cuda")
     tokenizer = AutoTokenizer.from_pretrained("princeton-nlp/sup-simcse-roberta-large")
     model = AutoModel.from_pretrained("princeton-nlp/sup-simcse-roberta-large")
@@ -104,6 +106,10 @@ def diversity(path = "./Data/Generations/perc_generations.txt", seed=None, size 
                 continue
             cos_sim = cosine(embeddings[i], embeddings[j])/2
             cos_sim_mat.append(cos_sim)
+    del model
+    del inputs
+    torch.cuda.empty_cache()
+    torch.cuda.ipc_collect()
     return cos_sim_mat
 
 def novelty(training_phrase, path = "./Data/Generations/perc_generations.txt", seed=None, size = 50, start=None):
@@ -114,6 +120,8 @@ def novelty(training_phrase, path = "./Data/Generations/perc_generations.txt", s
     seed: for reproducibility
     start: select in order, seed is not used if start != None
     """
+    torch.cuda.empty_cache()
+    torch.cuda.ipc_collect()
     device = torch.device("cuda")
     tokenizer = AutoTokenizer.from_pretrained("princeton-nlp/sup-simcse-roberta-large")
     model = AutoModel.from_pretrained("princeton-nlp/sup-simcse-roberta-large")
@@ -142,6 +150,10 @@ def novelty(training_phrase, path = "./Data/Generations/perc_generations.txt", s
     for i in range(embeddings.shape[0]-1):
             cos_sim = cosine(embeddings[i], embeddings[-1])/2
             cos_sim_mat.append(cos_sim)
+    del model
+    del inputs
+    torch.cuda.empty_cache()
+    torch.cuda.ipc_collect()
     return cos_sim_mat
 
 def novelty_new(training_phrase, path = "./Data/Generations/perc_generations.txt", seed=None, size = 50, start=None, prompt_size=5):
@@ -152,6 +164,8 @@ def novelty_new(training_phrase, path = "./Data/Generations/perc_generations.txt
     seed: for reproducibility
     start: select in order, seed is not used if start != None
     """
+    torch.cuda.empty_cache()
+    torch.cuda.ipc_collect()
     device = torch.device("cuda")
     tokenizer = AutoTokenizer.from_pretrained("princeton-nlp/sup-simcse-roberta-large")
     model = AutoModel.from_pretrained("princeton-nlp/sup-simcse-roberta-large")
@@ -181,6 +195,11 @@ def novelty_new(training_phrase, path = "./Data/Generations/perc_generations.txt
     for i in range(embeddings.shape[0]-1):
             cos_sim = cosine(embeddings[i], embeddings[-1])/2
             cos_sim_mat.append(cos_sim)
+
+    del model
+    del inputs
+    torch.cuda.empty_cache()
+    torch.cuda.ipc_collect()
     return cos_sim_mat
 
 
