@@ -106,6 +106,8 @@ def diversity(path = "./Data/Generations/perc_generations.txt", seed=None, size 
                 continue
             cos_sim = cosine(embeddings[i], embeddings[j])/2
             cos_sim_mat.append(cos_sim)
+    del texts
+    del embeddings
     del model
     del inputs
     torch.cuda.empty_cache()
@@ -150,6 +152,8 @@ def novelty(training_phrase, path = "./Data/Generations/perc_generations.txt", s
     for i in range(embeddings.shape[0]-1):
             cos_sim = cosine(embeddings[i], embeddings[-1])/2
             cos_sim_mat.append(cos_sim)
+    del texts
+    del embeddings
     del model
     del inputs
     torch.cuda.empty_cache()
@@ -196,6 +200,8 @@ def novelty_new(training_phrase, path = "./Data/Generations/perc_generations.txt
             cos_sim = cosine(embeddings[i], embeddings[-1])/2
             cos_sim_mat.append(cos_sim)
 
+    del texts
+    del embeddings
     del model
     del inputs
     torch.cuda.empty_cache()
